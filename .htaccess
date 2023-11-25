@@ -1,0 +1,100 @@
+# User/pass
+#SetEnvIf REQUEST_URI "^/(admin|secure)/" PASSWORD_PROTECTED
+#<RequireAny>
+#	<RequireAll>
+#		Require not env PASSWORD_PROTECTED
+#		Require all granted
+#	</RequireAll>
+#	<RequireAll>
+#		AuthType Basic
+#		AuthName "Password Protected"
+#		AuthUserFile /var/openhcp/YOUR_CLIENT_NAME/www/WEBSITE_DIR_NAME/www/.htpasswd
+#		Require valid-user
+#	</RequireAll>
+#</RequireAny>
+
+# maintenance - simple
+#<IfModule mod_alias.c>
+#	Redirect 503 /
+#	<IfModule mod_header.c>
+#		Header always set Retry-After "600"
+#	</IfModule>
+#</IfModule>
+
+# maintenance - customized
+#<IfModule mod_rewrite.c>
+#	RedirectMatch 503 ^/(?!503\.html)
+#	ErrorDocument 503 /503.html
+#	<IfModule mod_header.c>
+#		Header always set Retry-After "600"
+#	</IfModule>
+#</IfModule>
+
+# wybrana jakas.domena.pl jako glowna i jedyna dla https
+<IfModule mod_ssl.c>
+	<IfModule mod_rewrite.c>
+		RewriteEngine on
+#		RewriteCond %{HTTPS} !=on [OR]
+#		RewriteCond %{HTTP_HOST} !^jakas\.domena\.pl$ [NC]
+#		RewriteRule (.*) https://jakas.domena.pl%{REQUEST_URI} [R=301,L]
+#
+		RewriteCond %{HTTPS} !=on
+		RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+	</IfModule>
+	<If "%{HTTPS} == 'on'">
+		<IfModule mod_headers.c>
+			Header always set Strict-Transport-Security "max-age=31536000"
+# or this line:
+#			Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTP_HOST} == 'jakas.domena.pl'"
+		</IfModule>
+	</If>
+</IfModule>
+
+# upgrade all content to HTTPS
+<IfModule mod_ssl.c>
+	<If "%{HTTPS} == 'on'">
+		<IfModule mod_headers.c>
+			Header always set Content-Security-Policy "upgrade-insecure-requests;"
+		</IfModule>
+	</If>
+</IfModule>
+
+# webmailer - RoundCube
+#<IfModule mod_alias.c>
+#	Redirect "/poczta" "https://vertical.horisone.net/poczta"
+#</IfModule>
+
+# blokada per-IP
+#<IfModule mod_authz_core.c>
+#	<RequireAny>
+#		Require all denied
+#		Require ip [IP.ADD.RE.SS]
+#	</RequireAny>
+#</IfModule>
+
+#<IfModule mod_rewrite.c>
+#	RewriteEngine on
+# przekierowanie z podstronami
+#	RewriteRule (.*) https://jakas.domena.pl%{REQUEST_URI} [R=301,L]
+# przekierowanie na glowna strone
+#	RewriteRule (.*) https://jakas.domena.pl [R=301,L]
+#</IfModule>
+
+# redirect old pages to new add different URL
+#<IfModule mod_rewrite.c>
+#	RewriteEngine On
+
+# redirect specific page to new site
+#	RewriteCond %{REQUEST_URI} /some/address.php
+#	RewriteCond %{QUERY_STRING} some_parameter=60
+#	RewriteRule ^(.*)$ https://new-domain.pl/some_new_url/? [R=301,L]
+
+# and the rest - redirect to main page
+#	RedirectMatch 301 http://old-domain.pl/ http://new-domain.pl/
+#</IfModule>
+
+
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule (.*) index.php [L]
